@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Video Player</title>
+    
+    <!-- Video.js -->
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet">
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* ===== 비디오 래퍼 ===== */
+        .player-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 9 / 16;
+            background: #000;
+            overflow: hidden;
+        }
+        
+        @media (orientation: landscape) {
+            .player-wrapper {
+                max-width: 100%;
+                max-height: 100vh;
+                aspect-ratio: 16 / 9;
+            }
+        }
+        
+        /* ===== Video.js 스타일 ===== */
+        .video-js {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* 기본 큰 재생버튼 숨기기 (커스텀 사용) */
+        .video-js .vjs-big-play-button {
+            display: none !important;
+        }
+        
+        /* 하단 컨트롤바 스타일 커스터마이징 */
+        .video-js .vjs-control-bar {
+            background: linear-gradient(transparent, rgba(0,0,0,0.8)) !important;
+            height: 50px;
+            padding-top: 15px;
+        }
+        
+        /* 프로그레스 바 스타일 */
+        .video-js .vjs-progress-control {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: 5px;
+        }
+        
+        .video-js .vjs-progress-holder {
+            height: 100%;
+            margin: 0;
+        }
+        
+        .video-js .vjs-play-progress {
+            background: #e53935;
+        }
+        
+        .video-js .vjs-load-progress {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        /* 시간 표시: 현재시간/전체시간 형식 */
+        .video-js .vjs-remaining-time {
+            display: none !important;
+        }
+        
+        .video-js .vjs-current-time,
+        .video-js .vjs-duration {
+            display: block !important;
+        }
+        
+        .video-js .vjs-time-divider {
+            display: block !important;
+            min-width: auto;
+            padding: 0;
+        }
+        
+        /* ===== 터치/클릭 영역 ===== */
+        .touch-area {
+            position: absolute;
+            inset: 0;
+            bottom: 50px; /* 하단 컨트롤바 영역 제외 */
+            z-index: 100;
+            touch-action: manipulation;
+        }
+        
+        /* ===== 커스텀 오버레이 (중앙/사이드 버튼) ===== */
+        .custom-overlay {
+            position: absolute;
+            inset: 0;
+            bottom: 50px;
+            z-index: 200;
+            opacity: 1;
+            transition: opacity 0.25s ease;
+            pointer-events: none;
+        }
+        
+        /* Video.js vjs-user-inactive 상태와 동기화 */
+        .custom-overlay.hidden {
+            opacity: 0;
+        }
+        
+        .custom-overlay > * {
+            pointer-events: auto;
+        }
+        
+        .custom-overlay.hidden > * {
+            pointer-events: none;
+        }
+        
+        /* ===== 중앙 컨트롤 ===== */
+        .center-controls {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            gap: 50px;
+        }
+        
+        .btn-skip {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.5);
+            border: none;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            -webkit-appearance: none;
+            transition: transform 0.15s, background 0.15s;
+        }
+        
+        .btn-skip:active {
+            transform: scale(0.95);
+            background: rgba(0,0,0,0.7);
+        }
+        
+        .btn-skip .material-icons {
+            font-size: 28px;
+        }
+        
+        .btn-play {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: #e53935;
+            border: none;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(229,57,53,0.4);
+            -webkit-appearance: none;
+            transition: transform 0.15s, background 0.15s;
+        }
+        
+        .btn-play:active {
+            transform: scale(0.95);
+            background: #c62828;
+        }
+        
+        .btn-play .material-icons {
+            font-size: 42px;
+        }
+        
+        /* ===== 사이드 버튼 ===== */
+        .side-controls {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .btn-side {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(50,50,50,0.8);
+            border: none;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 4px;
+            -webkit-appearance: none;
+            transition: background 0.15s;
+        }
+        
+        .btn-side:active {
+            background: rgba(80,80,80,0.9);
+        }
+        
+        .btn-side .material-icons {
+            font-size: 20px;
+        }
+        
+        .btn-side .label {
+            font-size: 9px;
+            margin-top: 1px;
+        }
+        
+        /* ===== 시크 인디케이터 ===== */
+        .seek-indicator {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            z-index: 300;
+            animation: seekFade 0.8s ease forwards;
+            pointer-events: none;
+        }
+        
+        .seek-indicator.left { left: 15%; }
+        .seek-indicator.right { right: 15%; }
+        
+        .seek-indicator .material-icons {
+            font-size: 24px;
+        }
+        
+        @keyframes seekFade {
+            0% { opacity: 0; transform: translateY(-50%) scale(0.8); }
+            20% { opacity: 1; transform: translateY(-50%) scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        
+        /* ===== 반응형 ===== */
+        @media (max-width: 400px) {
+            .center-controls { gap: 30px; }
+            .btn-skip { width: 40px; height: 40px; }
+            .btn-play { width: 60px; height: 60px; }
+            .btn-play .material-icons { font-size: 36px; }
+            .btn-side { width: 42px; height: 42px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="player-wrapper" id="playerWrapper">
+    <!-- Video.js (controls: true) -->
+    <video 
+        id="videoPlayer"
+        class="video-js vjs-default-skin"
+        controls
+        playsinline
+        webkit-playsinline
+        preload="metadata"
+    >
+        <source src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" type="application/x-mpegURL">
+    </video>
+    
+    <!-- 터치/클릭 감지 영역 -->
+    <div class="touch-area" id="touchArea"></div>
+    
+    <!-- 커스텀 오버레이 (중앙/사이드만) -->
+    <div class="custom-overlay" id="customOverlay">
+        <!-- 중앙 컨트롤 -->
+        <div class="center-controls">
+            <button class="btn-skip" data-action="prev">
+                <span class="material-icons">chevron_left</span>
+            </button>
+            <button class="btn-play" data-action="play" id="btnPlay">
+                <span class="material-icons">play_arrow</span>
+            </button>
+            <button class="btn-skip" data-action="next">
+                <span class="material-icons">chevron_right</span>
+            </button>
+        </div>
+        
+        <!-- 사이드 컨트롤 -->
+        <div class="side-controls">
+            <button class="btn-side" data-action="info">
+                <span class="material-icons">info</span>
+                <span class="label">작품정보</span>
+            </button>
+            <button class="btn-side" data-action="episodes">
+                <span class="material-icons">list</span>
+                <span class="label">에피소드</span>
+            </button>
+            <button class="btn-side" data-action="comments">
+                <span class="material-icons">chat</span>
+                <span class="label">댓글</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Video.js -->
+<script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+
+<script>
+/**
+ * VideoPlayerController
+ * - 하단 컨트롤: Video.js 기본 사용
+ * - 중앙/사이드: 커스텀
+ * - Video.js userActive 상태와 동기화
+ */
+class VideoPlayerController {
+    constructor(videoId) {
+        // Video.js 초기화
+        this.player = videojs(videoId, {
+            inactivityTimeout: 3000
+        });
+        
+        // DOM
+        this.wrapper = document.getElementById('playerWrapper');
+        this.touchArea = document.getElementById('touchArea');
+        this.overlay = document.getElementById('customOverlay');
+        this.btnPlay = document.getElementById('btnPlay');
+        
+        // 탭 상태
+        this.tapCount = 0;
+        this.tapTimer = null;
+        this.lastTapX = 0;
+        
+        // 초기화
+        this.bindEvents();
+        this.player.ready(() => this.onReady());
+    }
+    
+    /* ===== 이벤트 바인딩 ===== */
+    bindEvents() {
+        // 터치 영역: 탭 감지
+        this.touchArea.addEventListener('pointerup', (e) => this.onTapArea(e));
+        
+        // 커스텀 오버레이: 버튼 이벤트 위임
+        this.overlay.addEventListener('pointerup', (e) => this.onOverlayClick(e));
+        
+        // Video.js 상태 이벤트 → 커스텀 오버레이 동기화
+        this.player.on('useractive', () => this.onUserActive());
+        this.player.on('userinactive', () => this.onUserInactive());
+        
+        // 재생/일시정지 아이콘 업데이트
+        this.player.on('play', () => this.updatePlayIcon());
+        this.player.on('pause', () => this.updatePlayIcon());
+    }
+    
+    /* ===== Video.js 상태 동기화 ===== */
+    onUserActive() {
+        // Video.js 컨트롤바가 표시될 때 → 커스텀 오버레이도 표시
+        this.overlay.classList.remove('hidden');
+    }
+    
+    onUserInactive() {
+        // Video.js 컨트롤바가 숨겨질 때 → 커스텀 오버레이도 숨김
+        // (재생 중일 때만)
+        if (!this.player.paused()) {
+            this.overlay.classList.add('hidden');
+        }
+    }
+    
+    /* ===== 터치 영역 탭 ===== */
+    onTapArea(e) {
+        e.preventDefault();
+        
+        const rect = this.touchArea.getBoundingClientRect();
+        const tapX = e.clientX || rect.width / 2;
+        this.lastTapX = (tapX - rect.left) / rect.width;
+        
+        this.tapCount++;
+        
+        if (this.tapCount === 1) {
+            this.tapTimer = setTimeout(() => {
+                // 싱글 탭 → 컨트롤 토글
+                this.toggleControls();
+                this.tapCount = 0;
+            }, 250);
+        } else {
+            // 더블 탭 → 시크
+            clearTimeout(this.tapTimer);
+            this.tapCount = 0;
+            this.handleDoubleTap();
+        }
+    }
+    
+    /* ===== 컨트롤 토글 (Video.js 상태 기반) ===== */
+    toggleControls() {
+        if (this.player.userActive()) {
+            // 현재 표시 중 → 숨기기
+            this.player.userActive(false);
+        } else {
+            // 현재 숨김 → 표시
+            this.player.userActive(true);
+        }
+    }
+    
+    handleDoubleTap() {
+        // 더블탭 시 컨트롤 잠깐 표시
+        // this.player.userActive(true);
+        
+        if (this.lastTapX < 0.35) {
+            this.seek(-10);
+            this.showSeekIndicator('10초', 'left');
+        } else if (this.lastTapX > 0.65) {
+            this.seek(10);
+            this.showSeekIndicator('10초', 'right');
+        } else {
+            this.togglePlay();
+        }
+    }
+    
+    showSeekIndicator(text, side) {
+        const existing = document.querySelector('.seek-indicator');
+        if (existing) existing.remove();
+        
+        const indicator = document.createElement('div');
+        indicator.className = `seek-indicator ${side}`;
+        indicator.innerHTML = `
+            <span class="material-icons">${side === 'left' ? 'fast_rewind' : 'fast_forward'}</span>
+            <span>${text}</span>
+        `;
+        this.wrapper.appendChild(indicator);
+        setTimeout(() => indicator.remove(), 800);
+    }
+    
+    /* ===== 오버레이 버튼 클릭 ===== */
+    onOverlayClick(e) {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        
+        e.stopPropagation();
+        
+        // 버튼 클릭 시 컨트롤 활성 상태 유지
+        this.player.userActive(true);
+        
+        const action = btn.dataset.action;
+        this.handleAction(action);
+    }
+    
+    handleAction(action) {
+        switch (action) {
+            case 'play':
+                this.togglePlay();
+                break;
+            case 'prev':
+                this.seek(-30);
+                break;
+            case 'next':
+                this.seek(30);
+                break;
+            case 'info':
+            case 'episodes':
+            case 'comments':
+                console.log('Action:', action);
+                break;
+        }
+    }
+    
+    /* ===== 재생 컨트롤 ===== */
+    togglePlay() {
+        if (this.player.paused()) {
+            this.player.play();
+        } else {
+            this.player.pause();
+        }
+    }
+    
+    updatePlayIcon() {
+        const icon = this.player.paused() ? 'play_arrow' : 'pause';
+        this.btnPlay.querySelector('.material-icons').textContent = icon;
+    }
+    
+    seek(seconds) {
+        const duration = this.player.duration() || 0;
+        const current = this.player.currentTime() || 0;
+        this.player.currentTime(Math.max(0, Math.min(duration, current + seconds)));
+    }
+    
+    onReady() {
+        console.log('Player ready');
+        // 초기 상태: 컨트롤 표시
+        this.player.userActive(true);
+    }
+}
+
+// 인스턴스 생성
+const controller = new VideoPlayerController('videoPlayer');
+</script>
+
+</body>
+</html>
