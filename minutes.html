@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <div id="root"></div>
+</body>
+    <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+    <script type="text/babel">
+
+        function MinutesToHours({minutes, onChangeMinutes}) {
+            return (
+                <div>
+                    <label htmlFor="minutes">Minutes</label>
+                    <input value={minutes} id="minutes" type="number" placeholder="Minutes" onChange={onChangeMinutes}/>
+                    <h4>{minutes} minutes is {minutes * 60} seconds.</h4>
+                    <label htmlFor="hours">Hours</label>
+                    <input id="hours" type="number" placeholder="Hours" />
+                </div>
+            );
+        }
+
+        function KmToMiles({km, onChangeKm}) {
+            return (
+                <div>
+                    <h3>km to miles</h3>
+                </div>
+            );
+        }
+        
+        // <MinutesToHours minutes={minutes} onChangeMinutes={onChangeMinutes} />
+        // <KmToMiles/>
+
+        function App() {
+            const [minutes, setMinutes] = React.useState();
+            const [index, setIndex] = React.useState("none");
+
+            const onChangeMinutes = (event) => {
+                setMinutes(event.target.value);
+                console.log(minutes);
+            }
+
+            const onChangeSelect = (event) => {
+                setIndex(event.target.value);
+            }
+            return (
+                <div>
+                    <h1 className="hi">Super Converter</h1>
+                    <select value={index} onChange={onChangeSelect}>
+                        <option value="none">Select your units</option>
+                        <option value="0">Minutes & Hours</option>
+                        <option value="1">Km & Miles</option>
+                    </select>
+                    <hr />
+                    {index === "0" ? <MinutesToHours minutes={minutes} onChangeMinutes={onChangeMinutes} /> : null}
+                    {index === "1" ? <KmToMiles/> : null}
+                </div>
+            );
+        }
+
+        const root = document.getElementById('root');
+        ReactDOM.render(<App />, root);
+    </script>
+</html>

@@ -3,31 +3,46 @@
 <body>
     <div id="root"></div>
 </body>
-    <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+    <script src="https://unpkg.com/prop-types@15.8.1/prop-types.js"></script>
+
     <script type="text/babel">
+        function Btn({ text, fontSize, arrIndex, objectIndex, func, onClick, count }) {
+            return <button onClick={onClick} style={{
+                backgroundColor: 'tomato', 
+                color: 'white', 
+                padding: '10px 20px', 
+                border: 0,
+                borderRadius: 10,
+                fontSize
+            }}>{text} {func?.()} {count}</button>
+        }
+
+        Btn.propTypes = {
+            text: PropTypes.string,
+            fontSize: PropTypes.number.isRequired
+        }
         
         function App() {
-            const [minutes, setMinutes] = React.useState();
+            const [count, setCount] = React.useState(0);
 
-            const onChangeMinutes = (event) => {
-                setMinutes(event.target.value);
-                console.log(minutes);
+            function setCountFunc() {
+                setCount((current) => {return current + 1;});
+            }
+            
+            function func() {
+                return <div>Hello</div>;
             }
             return (
                 <div>
-                    <h1 className="hi">Super Converter</h1>
-                    <label htmlFor="minutes">Minutes</label>
-                    <input value={minutes} id="minutes" type="number" placeholder="Minutes" onChange={onChangeMinutes}/>
-                    <h4>{minutes} minutes is {minutes * 60} seconds.</h4>
-                    <label htmlFor="hours">Hours</label>
-                    <input id="hours" type="number" placeholder="Hours" />
+                    <Btn count={count} text='Save changes' fontSize={18} arrIndex={[1,2,3]} objectIndex={{a:1,b:2,c:3}} func={func} onClick={setCountFunc}/>
                 </div>
             );
         }
 
-        const root = document.getElementById('root');
-        ReactDOM.render(<App />, root);
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </html>
