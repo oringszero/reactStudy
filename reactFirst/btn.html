@@ -27,17 +27,23 @@
         
         function App() {
             const [count, setCount] = React.useState(0);
+            const [count2, setCount2] = React.useState(0);
 
             function setCountFunc() {
                 setCount((current) => {return current + 1;});
             }
+
+            function setCount2Func(num) {
+                setCount2((current) => {return current + num;});
+            }
             
-            function func() {
+            function func1() {
                 return <div>Hello</div>;
             }
             return (
                 <div>
-                    <Btn count={count} text='Save changes' fontSize={18} arrIndex={[1,2,3]} objectIndex={{a:1,b:2,c:3}} func={func} onClick={setCountFunc}/>
+                    <Btn count={count} text='Save changes11' fontSize={18} arrIndex={[1,2,3]} objectIndex={{a:1,b:2,c:3}} func={func1} onClick={setCountFunc}/>
+                    <Btn count={count2} text='Save changes22' fontSize={18} arrIndex={[1,2,3]} objectIndex={{a:1,b:2,c:3}} func={func1} onClick={() => {setCount2Func(10)}}/>
                 </div>
             );
         }
