@@ -4,7 +4,7 @@ import Detail from "./routes/Detail";
 
 function App() {
   return (
-    <Router>  
+    <Router basename={process.env.PUBLIC_URL}>  
       <Routes>
         <Route path="/hello" element={<h1>hello world</h1>} />
         <Route path="/" element={<Home />} />

@@ -17,12 +17,14 @@ function Detail() {
     getMovie(id);
   }, [id]);
 
+  const onVoteAverageClick = () => console.log(1);
+
   return (
     <div>
       <h1>Detail</h1>
       {loading ? (
         <>
-          <stroing>Loading...</stroing>
+          <strong>Loading...</strong>
           <Link to="/">Home</Link>
         </>      
         ) : (
@@ -35,7 +37,9 @@ function Detail() {
           <img src={movie.poster_path} alt={movie.title} style={{ maxWidth: "200px", height: "auto" }} />
           <p>개봉: {movie.release_date}</p>
           <p>상영시간: {movie.runtime}분</p>
-          <p>평점: {movie.vote_average} (투표 {movie.vote_count}개)</p>
+          <p role="button" tabIndex={0} onClick={onVoteAverageClick} onKeyDown={(e) => e.key === "Enter" && onVoteAverageClick()}>
+            평점: {movie.vote_average} (투표 {movie.vote_count}개)
+          </p>
         </>
       )}
     </div>
